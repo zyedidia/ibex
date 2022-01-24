@@ -63,6 +63,7 @@ module ibex_cs_registers #(
   output ibex_pkg::irqs_t      irqs_o,                 // interrupt requests qualified with mie
   output logic                 csr_mstatus_mie_o,
   output logic [31:0]          csr_mepc_o,
+  output ibex_pkg::reg_ctx_e   rf_ctx_sel_o,
 
   // PMP
   output ibex_pkg::pmp_cfg_t     csr_pmp_cfg_o  [PMPNumRegions],
@@ -499,10 +500,22 @@ module ibex_cs_registers #(
     endcase
   end
 
+  reg_ctx_e rf_ctx_sel_q, rf_ctx_sel_d;
+  assign rf_ctx_sel_o = rf_ctx_sel_q;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      rf_ctx_sel_q <= ibex_pkg::REG_CTX_NORMAL;
+    end else begin
+      rf_ctx_sel_q <= rf_ctx_sel_d;
+    end
+  end
+
   // write logic
   always_comb begin
     exception_pc = pc_id_i;
 
+    rf_ctx_sel_d = rf_ctx_sel_q;
     priv_lvl_d   = priv_lvl_q;
     mstatus_en   = 1'b0;
     mstatus_d    = mstatus_q;
@@ -693,6 +706,19 @@ module ibex_cs_registers #(
           mcause_d       = {csr_mcause_i};
           // save previous status for recoverable NMI
           mstack_en      = 1'b1;
+
+          case (csr_mcause_i)
+            EXC_CAUSE_IRQ_SOFTWARE_M,
+            EXC_CAUSE_IRQ_TIMER_M,
+            EXC_CAUSE_IRQ_NM,
+            EXC_CAUSE_IRQ_EXTERNAL_M:
+              rf_ctx_sel_d = REG_CTX_IRQ;
+            EXC_CAUSE_ECALL_UMODE,
+            EXC_CAUSE_ECALL_MMODE:
+              rf_ctx_sel_d = REG_CTX_ECALL;
+            default:
+              rf_ctx_sel_d = REG_CTX_EXC;
+          endcase
         end
       end // csr_save_cause_i
 
@@ -704,6 +730,7 @@ module ibex_cs_registers #(
         priv_lvl_d     = mstatus_q.mpp;
         mstatus_en     = 1'b1;
         mstatus_d.mie  = mstatus_q.mpie; // re-enable interrupts
+        rf_ctx_sel_d   = REG_CTX_NORMAL;
 
         if (nmi_mode_i) begin
           // when returning from an NMI restore state from mstack CSR

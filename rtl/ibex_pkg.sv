@@ -302,6 +302,16 @@ package ibex_pkg;
                           // one interrupt is reserved for NMI (not visible through mip/mie)
   } irqs_t;
 
+  // Register contexts
+  typedef enum logic [1:0] {
+    REG_CTX_NORMAL = 0,
+    REG_CTX_EXC    = 1,
+    REG_CTX_IRQ    = 2,
+    REG_CTX_ECALL  = 3
+  } reg_ctx_e;
+
+  localparam NR_REG_CTX = 4;
+
   // Exception cause
   typedef enum logic [5:0] {
     EXC_CAUSE_IRQ_SOFTWARE_M     = {1'b1, 5'd03},
