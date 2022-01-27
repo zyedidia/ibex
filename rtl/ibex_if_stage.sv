@@ -172,11 +172,16 @@ module ibex_if_stage import ibex_pkg::*; #(
   // exception PC selection mux
   always_comb begin : exc_pc_mux
     unique case (exc_pc_mux_i)
-      EXC_PC_EXC:     exc_pc = { csr_mtvec_i[31:8], 8'h00                    };
-      EXC_PC_IRQ:     exc_pc = { csr_mtvec_i[31:8], 1'b0, irq_id[4:0], 2'b00 };
+      EXC_PC_EXC:     exc_pc = { csr_mtvec_i[31:8], 8'h00 };
       EXC_PC_DBD:     exc_pc = DmHaltAddr;
       EXC_PC_DBG_EXC: exc_pc = DmExceptionAddr;
-      default:        exc_pc = { csr_mtvec_i[31:8], 8'h00                    };
+      EXC_PC_IRQ: begin
+        // vectored mode
+        if (csr_mtvec_i[1:0] == 2'b01) exc_pc = { csr_mtvec_i[31:8], 1'b0, irq_id[4:0], 2'b00 };
+        // directed mode
+        else                           exc_pc = { csr_mtvec_i[31:2], 2'b00 };
+      end
+      default: exc_pc = { csr_mtvec_i[31:8], 8'h00 };
     endcase
   end
 
