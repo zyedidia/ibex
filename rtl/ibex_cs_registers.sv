@@ -517,8 +517,16 @@ module ibex_cs_registers #(
     mtvec_en     = csr_mtvec_init_i;
     // mtvec.MODE set to vectored by default
     // mtvec.BASE must be 256-byte aligned
-    mtvec_d      = csr_mtvec_init_i ? {boot_addr_i[31:8], 6'b0, 2'b01} :
-                                      {csr_wdata_int[31:8], 6'b0, csr_wdata_int[1:0]};
+    if (csr_mtvec_init_i) begin
+      // init to vectored mode at boot address
+      mtvec_d = {boot_addr_i[31:8], 6'b0, 2'b01};
+    end else if (csr_wdata_int[1:0] == 2'b00) begin
+      // directed mode, must be 4-byte aligned
+      mtvec_d = csr_wdata_int;
+    end else begin
+      // vectored mode, must be 256-byte aligned
+      mtvec_d = {csr_wdata_int[31:8], 6'b0, 2'b01};
+    end
     dcsr_en      = 1'b0;
     dcsr_d       = dcsr_q;
     depc_d       = {csr_wdata_int[31:1], 1'b0};
