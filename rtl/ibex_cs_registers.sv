@@ -63,7 +63,13 @@ module ibex_cs_registers #(
   output ibex_pkg::irqs_t      irqs_o,                 // interrupt requests qualified with mie
   output logic                 csr_mstatus_mie_o,
   output logic [31:0]          csr_mepc_o,
+
   output ibex_pkg::reg_ctx_e   rf_ctx_sel_o,
+
+  output logic rf_csr_o,
+  output logic rf_we_o,
+  output logic [31:0] rf_wdata_o,
+  output logic [4:0] rf_waddr_o,
 
   // PMP
   output ibex_pkg::pmp_cfg_t     csr_pmp_cfg_o  [PMPNumRegions],
@@ -500,6 +506,16 @@ module ibex_cs_registers #(
     endcase
   end
 
+  logic rf_csr_q, rf_csr_d;
+  logic rf_we_q, rf_we_d;
+  logic [31:0] rf_wdata_q, rf_wdata_d;
+  logic [4:0] rf_waddr_q, rf_waddr_d;
+
+  assign rf_csr_o = rf_csr_q;
+  assign rf_we_o = rf_we_q;
+  assign rf_wdata_o = rf_wdata_q;
+  assign rf_waddr_o = rf_waddr_q;
+
   reg_ctx_e rf_ctx_sel_q, rf_ctx_sel_d;
   reg_ctx_e rf_ctx_sel_prev_q, rf_ctx_sel_prev_d;
   assign rf_ctx_sel_o = rf_ctx_sel_q;
@@ -508,15 +524,30 @@ module ibex_cs_registers #(
     if (!rst_ni) begin
       rf_ctx_sel_q <= ibex_pkg::REG_CTX_NORMAL;
       rf_ctx_sel_prev_q <= ibex_pkg::REG_CTX_NORMAL;
+
+      rf_csr_q   <= '0;
+      rf_we_q    <= '0;
+      rf_wdata_q <= '0;
+      rf_waddr_q <= '0;
     end else begin
       rf_ctx_sel_q <= rf_ctx_sel_d;
       rf_ctx_sel_prev_q <= rf_ctx_sel_prev_d;
+
+      rf_csr_q   <= rf_csr_d;
+      rf_we_q    <= rf_we_d;
+      rf_wdata_q <= rf_wdata_d;
+      rf_waddr_q <= rf_waddr_d;
     end
   end
 
   // write logic
   always_comb begin
     exception_pc = pc_id_i;
+
+    rf_csr_d = 1'b0;
+    rf_we_d = 1'b0;
+    rf_wdata_d = 32'd0;
+    rf_waddr_d = 32'd0;
 
     rf_ctx_sel_prev_d = rf_ctx_sel_prev_q;
     rf_ctx_sel_d = rf_ctx_sel_q;
@@ -712,6 +743,11 @@ module ibex_cs_registers #(
           mstack_en      = 1'b1;
 
           rf_ctx_sel_prev_d = rf_ctx_sel_q;
+
+          rf_csr_d = 1'b1;
+          rf_we_d = 1'b1;
+          rf_wdata_d = exception_pc;
+          rf_waddr_d = 5'd1; // ra
 
           case (csr_mcause_i)
             EXC_CAUSE_IRQ_SOFTWARE_M,

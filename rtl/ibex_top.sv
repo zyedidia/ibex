@@ -75,6 +75,7 @@ module ibex_top import ibex_pkg::*; #(
   output logic [RegFileDataWidth-1:0]  rf_wdata_wb_ecc_o,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_a_ecc_i,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_b_ecc_i,
+  input  logic [RegFileDataWidth-1:0]  rf_ra_i,
   output reg_ctx_e                     rf_ctx_sel_o,
 
   // Interrupt inputs
@@ -148,19 +149,6 @@ module ibex_top import ibex_pkg::*; #(
   logic                        irq_pending;
   // Core <-> Register file signals
   logic                        dummy_instr_id;
-  // logic                        rf_we_wb_w [NR_REG_CTX];
-  // logic [RegFileDataWidth-1:0] rf_rdata_a_ecc_w [NR_REG_CTX];
-  // logic [RegFileDataWidth-1:0] rf_rdata_b_ecc_w [NR_REG_CTX];
-  //
-  // logic [4:0]                  rf_raddr_a;
-  // logic [4:0]                  rf_raddr_b;
-  // logic [4:0]                  rf_waddr_wb;
-  // logic                        rf_we_wb;
-  // logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
-  // logic [RegFileDataWidth-1:0] rf_rdata_a_ecc;
-  // logic [RegFileDataWidth-1:0] rf_rdata_b_ecc;
-  //
-  // reg_ctx_e rf_ctx_sel;
 
   // Core <-> RAMs signals
   logic [IC_NUM_WAYS-1:0]      ic_tag_req;
@@ -264,6 +252,7 @@ module ibex_top import ibex_pkg::*; #(
     .rf_rdata_a_ecc_i (rf_rdata_a_ecc_i),
     .rf_rdata_b_ecc_i (rf_rdata_b_ecc_i),
     .rf_ctx_sel_o     (rf_ctx_sel_o),
+    .rf_ra_i          (rf_ra_i),
 
     .ic_tag_req_o   (ic_tag_req),
     .ic_tag_write_o (ic_tag_write),

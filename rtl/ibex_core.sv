@@ -76,6 +76,7 @@ module ibex_core import ibex_pkg::*; #(
   output logic [RegFileDataWidth-1:0]  rf_wdata_wb_ecc_o,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_a_ecc_i,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_b_ecc_i,
+  input  logic [RegFileDataWidth-1:0]  rf_ra_i,
   output reg_ctx_e                     rf_ctx_sel_o,
 
   // RAMs interface
@@ -540,6 +541,8 @@ module ibex_core import ibex_pkg::*; #(
     .csr_mstatus_tw_i     (csr_mstatus_tw),
     .illegal_csr_insn_i   (illegal_csr_insn_id),
     .data_ind_timing_i    (data_ind_timing),
+    .csr_mepc_i           (csr_mepc),
+    .rf_ra_i              (rf_ra_i),
 
     // LSU
     .lsu_req_o     (lsu_req),  // to load store unit
@@ -755,10 +758,15 @@ module ibex_core import ibex_pkg::*; #(
   // Register file interface //
   /////////////////////////////
 
+  logic rf_csr_en;
+  logic rf_csr_we;
+  logic [31:0] rf_csr_wdata;
+  logic [4:0] rf_csr_waddr;
+
   assign dummy_instr_id_o = dummy_instr_id;
   assign rf_raddr_a_o     = rf_raddr_a;
-  assign rf_waddr_wb_o    = rf_waddr_wb;
-  assign rf_we_wb_o       = rf_we_wb;
+  assign rf_waddr_wb_o    = rf_csr_en ? rf_csr_waddr : rf_waddr_wb;
+  assign rf_we_wb_o       = rf_csr_en ? rf_csr_we : rf_we_wb;
   assign rf_raddr_b_o     = rf_raddr_b;
 
   if (RegFileECC) begin : gen_regfile_ecc
@@ -805,7 +813,7 @@ module ibex_core import ibex_pkg::*; #(
     assign unused_rf_ren_b         = rf_ren_b;
     assign unused_rf_rd_a_wb_match = rf_rd_a_wb_match;
     assign unused_rf_rd_b_wb_match = rf_rd_b_wb_match;
-    assign rf_wdata_wb_ecc_o       = rf_wdata_wb;
+    assign rf_wdata_wb_ecc_o       = rf_csr_en ? rf_csr_wdata : rf_wdata_wb;
     assign rf_rdata_a              = rf_rdata_a_ecc_i;
     assign rf_rdata_b              = rf_rdata_b_ecc_i;
     assign rf_ecc_err_comb         = 1'b0;
@@ -932,7 +940,12 @@ module ibex_core import ibex_pkg::*; #(
     .csr_mstatus_mie_o(csr_mstatus_mie),
     .csr_mstatus_tw_o (csr_mstatus_tw),
     .csr_mepc_o       (csr_mepc),
+
     .rf_ctx_sel_o     (rf_ctx_sel_o),
+    .rf_csr_o         (rf_csr_en),
+    .rf_we_o          (rf_csr_we),
+    .rf_wdata_o       (rf_csr_wdata),
+    .rf_waddr_o       (rf_csr_waddr),
 
     // PMP
     .csr_pmp_cfg_o    (csr_pmp_cfg),

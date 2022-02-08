@@ -105,6 +105,8 @@ module ibex_id_stage #(
   input  logic                      csr_mstatus_tw_i,
   input  logic                      illegal_csr_insn_i,
   input  logic                      data_ind_timing_i,
+  input  logic [31:0]               rf_ra_i,
+  input  logic [31:0]               csr_mepc_i,
 
   // Interface to load store unit
   output logic                      lsu_req_o,
@@ -485,6 +487,9 @@ module ibex_id_stage #(
     // CSRs
     .csr_access_o(csr_access_o),
     .csr_op_o    (csr_op_o),
+
+    .rf_ra_i         (rf_ra_i),
+    .csr_mepc_i      (csr_mepc_i),
 
     // LSU
     .data_req_o           (lsu_req_dec),

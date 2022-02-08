@@ -30,13 +30,15 @@ module ibex_register_file_fpga #(
   //Read port R2
   input  logic [          4:0] raddr_b_i,
   output logic [DataWidth-1:0] rdata_b_o,
-  //Read port R2
+  //Read port R3
   input  logic [          4:0] raddr_c_i,
   output logic [DataWidth-1:0] rdata_c_o,
   // Write port W1
   input  logic [          4:0] waddr_a_i,
   input  logic [DataWidth-1:0] wdata_a_i,
-  input  logic                 we_a_i
+  input  logic                 we_a_i,
+
+  output logic [DataWidth-1:0] ra_o
 );
 
   localparam int ADDR_WIDTH = RV32E ? 4 : 5;
@@ -53,6 +55,8 @@ module ibex_register_file_fpga #(
 
   // async_read c
   assign rdata_c_o = (raddr_c_i == '0) ? '0 : mem[raddr_c_i];
+
+  assign ra_o = mem[5'd1];
 
   // we select
   assign we = (waddr_a_i == '0) ? 1'b0 : we_a_i;
