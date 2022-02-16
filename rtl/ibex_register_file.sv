@@ -18,6 +18,9 @@ module ibex_register_file import ibex_pkg::*; #(
   //Read port R2
   input  logic [          4:0] raddr_b_i,
   output logic [DataWidth-1:0] rdata_b_o,
+  //Read port R3
+  input  logic [          4:0] raddr_c_i,
+  output logic [DataWidth-1:0] rdata_c_o,
   // Write port W1
   input  logic [          4:0] waddr_a_i,
   input  logic [DataWidth-1:0] wdata_a_i,
@@ -40,6 +43,8 @@ module ibex_register_file import ibex_pkg::*; #(
       .rdata_a_o(rdata_a_o),
       .raddr_b_i(raddr_b_i),
       .rdata_b_o(rdata_b_o),
+      .raddr_c_i(raddr_c_i),
+      .rdata_c_o(rdata_c_o),
       .waddr_a_i(waddr_a_i),
       .wdata_a_i(wdata_a_i),
       .we_a_i   (we_a_i)
@@ -61,6 +66,8 @@ module ibex_register_file import ibex_pkg::*; #(
       .rdata_a_o(rdata_a_o),
       .raddr_b_i(raddr_b_i),
       .rdata_b_o(rdata_b_o),
+      .raddr_c_i(raddr_c_i),
+      .rdata_c_o(rdata_c_o),
       .waddr_a_i(waddr_a_i),
       .wdata_a_i(wdata_a_i),
       .we_a_i   (we_a_i)
@@ -82,6 +89,8 @@ module ibex_register_file import ibex_pkg::*; #(
       .rdata_a_o(rdata_a_o),
       .raddr_b_i(raddr_b_i),
       .rdata_b_o(rdata_b_o),
+      .raddr_c_i(raddr_c_i),
+      .rdata_c_o(rdata_c_o),
       .waddr_a_i(waddr_a_i),
       .wdata_a_i(wdata_a_i),
       .we_a_i   (we_a_i)
