@@ -407,6 +407,9 @@ package ibex_pkg;
     CSR_MTVAL     = 12'h343,
     CSR_MIP       = 12'h344,
 
+    // Machine register file
+    CSR_MRF       = 12'h345,
+
     // Physical memory protection
     CSR_PMPCFG0   = 12'h3A0,
     CSR_PMPCFG1   = 12'h3A1,

@@ -13,6 +13,7 @@
  * Top level module of the ibex RISC-V core
  */
 module ibex_core import ibex_pkg::*; #(
+  parameter int          NumRegFiles       = 4,
   parameter bit          PMPEnable         = 1'b0,
   parameter int unsigned PMPGranularity    = 0,
   parameter int unsigned PMPNumRegions     = 4,
@@ -68,14 +69,15 @@ module ibex_core import ibex_pkg::*; #(
   input  logic                         data_err_i,
 
   // Register file interface
-  output logic                         dummy_instr_id_o,
-  output logic [4:0]                   rf_raddr_a_o,
-  output logic [4:0]                   rf_raddr_b_o,
-  output logic [4:0]                   rf_waddr_wb_o,
-  output logic                         rf_we_wb_o,
-  output logic [RegFileDataWidth-1:0]  rf_wdata_wb_ecc_o,
-  input  logic [RegFileDataWidth-1:0]  rf_rdata_a_ecc_i,
-  input  logic [RegFileDataWidth-1:0]  rf_rdata_b_ecc_i,
+  output logic                           dummy_instr_id_o,
+  output logic [4:0]                     rf_raddr_a_o,
+  output logic [4:0]                     rf_raddr_b_o,
+  output logic [4:0]                     rf_waddr_wb_o,
+  output logic                           rf_we_wb_o,
+  output logic [RegFileDataWidth-1:0]    rf_wdata_wb_ecc_o,
+  input  logic [RegFileDataWidth-1:0]    rf_rdata_a_ecc_i,
+  input  logic [RegFileDataWidth-1:0]    rf_rdata_b_ecc_i,
+  output logic [$clog2(NumRegFiles)-1:0] rf_ctx_sel_o,
 
   // RAMs interface
   output logic [IC_NUM_WAYS-1:0]       ic_tag_req_o,

@@ -211,6 +211,9 @@ module ibex_cs_registers #(
   logic [31:0] dscratch1_q;
   logic        dscratch0_en, dscratch1_en;
 
+  logic [31:0] mrf_q, mrf_d;
+  logic mrf_en;
+
   // CSRs for recoverable NMIs
   // NOTE: these CSRS are nonstandard, see https://github.com/riscv/riscv-isa-manual/issues/261
   status_stk_t mstack_q, mstack_d;
@@ -337,6 +340,9 @@ module ibex_cs_registers #(
 
       // mtvec: trap-vector base address
       CSR_MTVEC: csr_rdata_int = mtvec_q;
+
+      // mrf: active register file selector
+      CSR_MRF: csr_rdata_int = mrf_q;
 
       // mepc: exception program counter
       CSR_MEPC: csr_rdata_int = mepc_q;
@@ -515,6 +521,8 @@ module ibex_cs_registers #(
     mtval_en     = 1'b0;
     mtval_d      = csr_wdata_int;
     mtvec_en     = csr_mtvec_init_i;
+    mrf_en       = 1'b0;
+    mrf_d        = csr_wdata_int;
     // mtvec.MODE set to vectored by default
     // mtvec.BASE must be 256-byte aligned
     if (csr_mtvec_init_i) begin
@@ -574,6 +582,9 @@ module ibex_cs_registers #(
 
         // mcause
         CSR_MCAUSE: mcause_en = 1'b1;
+
+        // mrf
+        CSR_MRF: mrf_en = 1'b1;
 
         // mtval: trap value
         CSR_MTVAL: mtval_en = 1'b1;
@@ -882,6 +893,20 @@ module ibex_cs_registers #(
     .wr_en_i   (mtvec_en),
     .rd_data_o (mtvec_q),
     .rd_error_o(mtvec_err)
+  );
+
+  // MRF
+  ibex_csr #(
+    .Width     (32),
+    .ShadowCopy(1'b0),
+    .ResetValue('0)
+  ) u_mrf_csr (
+    .clk_i     (clk_i),
+    .rst_ni    (rst_ni),
+    .wr_data_i (mrf_d),
+    .wr_en_i   (mrf_en),
+    .rd_data_o (mrf_q),
+    .rd_error_o()
   );
 
   // DCSR
