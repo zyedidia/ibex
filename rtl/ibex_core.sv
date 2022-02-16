@@ -933,6 +933,7 @@ module ibex_core import ibex_pkg::*; #(
     .csr_mstatus_mie_o(csr_mstatus_mie),
     .csr_mstatus_tw_o (csr_mstatus_tw),
     .csr_mepc_o       (csr_mepc),
+    .csr_mrf_o        (rf_ctx_sel_o),
 
     // PMP
     .csr_pmp_cfg_o    (csr_pmp_cfg),
