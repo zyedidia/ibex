@@ -63,6 +63,7 @@ module ibex_cs_registers #(
   output ibex_pkg::irqs_t      irqs_o,                 // interrupt requests qualified with mie
   output logic                 csr_mstatus_mie_o,
   output logic [31:0]          csr_mepc_o,
+  output logic [31:0]          csr_mrf_o,
 
   // PMP
   output ibex_pkg::pmp_cfg_t     csr_pmp_cfg_o  [PMPNumRegions],
@@ -211,6 +212,9 @@ module ibex_cs_registers #(
   logic [31:0] dscratch1_q;
   logic        dscratch0_en, dscratch1_en;
 
+  logic [31:0] mrf_q, mrf_d;
+  logic mrf_en;
+
   // CSRs for recoverable NMIs
   // NOTE: these CSRS are nonstandard, see https://github.com/riscv/riscv-isa-manual/issues/261
   status_stk_t mstack_q, mstack_d;
@@ -340,6 +344,9 @@ module ibex_cs_registers #(
 
       // mepc: exception program counter
       CSR_MEPC: csr_rdata_int = mepc_q;
+
+      // mrf: active register file address
+      CSR_MRF: csr_rdata_int = mrf_q;
 
       // mcause: exception cause
       CSR_MCAUSE: csr_rdata_int = {mcause_q[5], 26'b0, mcause_q[4:0]};
@@ -515,6 +522,8 @@ module ibex_cs_registers #(
     mtval_en     = 1'b0;
     mtval_d      = csr_wdata_int;
     mtvec_en     = csr_mtvec_init_i;
+    mrf_en       = 1'b0;
+    mrf_d        = csr_wdata_int;
     // mtvec.MODE set to vectored by default
     // mtvec.BASE must be 256-byte aligned
     if (csr_mtvec_init_i) begin
@@ -574,6 +583,9 @@ module ibex_cs_registers #(
 
         // mcause
         CSR_MCAUSE: mcause_en = 1'b1;
+
+        // mrf
+        CSR_MRF: mrf_en = 1'b1;
 
         // mtval: trap value
         CSR_MTVAL: mtval_en = 1'b1;
@@ -761,6 +773,7 @@ module ibex_cs_registers #(
   assign csr_mepc_o  = mepc_q;
   assign csr_depc_o  = depc_q;
   assign csr_mtvec_o = mtvec_q;
+  assign csr_mrf_o   = mrf_q;
 
   assign csr_mstatus_mie_o   = mstatus_q.mie;
   assign csr_mstatus_tw_o    = mstatus_q.tw;
@@ -867,6 +880,20 @@ module ibex_cs_registers #(
     .wr_data_i (mtval_d),
     .wr_en_i   (mtval_en),
     .rd_data_o (mtval_q),
+    .rd_error_o()
+  );
+
+  // MRF
+  ibex_csr #(
+    .Width     (32),
+    .ShadowCopy(1'b0),
+    .ResetValue('0)
+  ) u_mrf_csr (
+    .clk_i     (clk_i),
+    .rst_ni    (rst_ni),
+    .wr_data_i (mrf_d),
+    .wr_en_i   (mrf_en),
+    .rd_data_o (mrf_q),
     .rd_error_o()
   );
 

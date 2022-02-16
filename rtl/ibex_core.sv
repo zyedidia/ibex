@@ -290,6 +290,7 @@ module ibex_core import ibex_pkg::*; #(
   irqs_t       irqs;
   logic        csr_mstatus_mie;
   logic [31:0] csr_mepc, csr_depc;
+  logic [31:0] csr_mrf;
 
   // PMP signals
   logic [33:0]  csr_pmp_addr [PMPNumRegions];
@@ -931,6 +932,7 @@ module ibex_core import ibex_pkg::*; #(
     .csr_mstatus_mie_o(csr_mstatus_mie),
     .csr_mstatus_tw_o (csr_mstatus_tw),
     .csr_mepc_o       (csr_mepc),
+    .csr_mrf_o        (csr_mrf),
 
     // PMP
     .csr_pmp_cfg_o    (csr_pmp_cfg),
