@@ -137,6 +137,7 @@ module ibex_core import ibex_pkg::*; #(
 
   // CPU Control Signals
   input  logic                         fetch_enable_i,
+  input  logic                         rf_busy_i,
   output logic                         alert_minor_o,
   output logic                         alert_major_o,
   output logic                         core_busy_o
@@ -270,6 +271,7 @@ module ibex_core import ibex_pkg::*; #(
   // stall control
   logic        id_in_ready;
   logic        ex_valid;
+  logic        csr_stall;
 
   logic        lsu_resp_valid;
   logic        lsu_resp_err;
@@ -437,7 +439,7 @@ module ibex_core import ibex_pkg::*; #(
     .csr_mtvec_init_o(csr_mtvec_init),
 
     // pipeline stalls
-    .id_in_ready_i(id_in_ready && fetch_enable_i),
+    .id_in_ready_i(!csr_stall && id_in_ready && !rf_busy_i),
 
     .pc_mismatch_alert_o(pc_mismatch_alert),
     .if_busy_o          (if_busy)
@@ -920,6 +922,8 @@ module ibex_core import ibex_pkg::*; #(
     .csr_op_i    (csr_op),
     .csr_op_en_i (csr_op_en),
     .csr_rdata_o (csr_rdata),
+
+    .csr_stall_o (csr_stall),
 
     // Interrupt related control signals
     .irq_software_i   (irq_software_i),

@@ -92,6 +92,7 @@ module ibex_cs_registers #(
   output logic [31:0]          dummy_instr_seed_o,
   output logic                 icache_enable_o,
   output logic                 csr_shadow_err_o,
+  output logic                 csr_stall_o,
 
   // Exception save/restore
   input  logic                 csr_save_if_i,
@@ -510,6 +511,7 @@ module ibex_cs_registers #(
   always_comb begin
     exception_pc = pc_id_i;
 
+    csr_stall_o  = 1'b0;
     priv_lvl_d   = priv_lvl_q;
     mstatus_en   = 1'b0;
     mstatus_d    = mstatus_q;
@@ -585,7 +587,10 @@ module ibex_cs_registers #(
         CSR_MCAUSE: mcause_en = 1'b1;
 
         // mrf
-        CSR_MRF: mrf_en = 1'b1;
+        CSR_MRF: begin
+          mrf_en = 1'b1;
+          csr_stall_o = 1'b1;
+        end
 
         // mtval: trap value
         CSR_MTVAL: mtval_en = 1'b1;

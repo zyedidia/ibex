@@ -314,7 +314,8 @@ module ibex_top import ibex_pkg::*; #(
     .rvfi_ext_mcycle,
 `endif
 
-    .fetch_enable_i (!rf_busy && fetch_enable_i),
+    .fetch_enable_i (fetch_enable_i),
+    .rf_busy_i      (rf_busy),
     .alert_minor_o(core_alert_minor),
     .alert_major_o(core_alert_major),
     .core_busy_o  (core_busy_d)

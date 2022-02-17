@@ -86,7 +86,7 @@ module ibex_rfcache import ibex_pkg::*; #(
     end
   end
 
-  assign rf_busy_o = state_q != normal;
+  assign rf_busy_o = rf_sel_i != active_rf_q;
 
   logic [4:0]  rf_waddr;
   logic [31:0] rf_wdata;
