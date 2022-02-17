@@ -37,6 +37,7 @@ module ibex_rfcache import ibex_pkg::*; #(
   input  logic                 data_err_i,
 
   input logic [31:0]           rf_sel_i,
+  output logic                 rf_busy_o,
 
   // Register file interface
   // Read port R1
@@ -70,7 +71,36 @@ module ibex_rfcache import ibex_pkg::*; #(
     end
   end
 
+  typedef enum {normal, spill_req, spill_wait, load_req, load_wait} state_t;
+  state_t state_q, state_d;
+
+  logic [4:0] reg_count_q, reg_count_d;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      state_q <= normal;
+      reg_count_q <= '0;
+    end else begin
+      state_q <= state_d;
+      reg_count_q <= reg_count_d;
+    end
+  end
+
+  assign rf_busy_o = state_q != normal;
+
+  logic [4:0]  rf_waddr;
+  logic [31:0] rf_wdata;
+  logic rf_we;
+
   always_comb begin
+    state_d = state_q;
+    active_rf_d = active_rf_q;
+    reg_count_d = reg_count_q;
+
+    rf_waddr = rf_waddr_a_i;
+    rf_wdata = rf_wdata_a_i;
+    rf_we    = rf_we_a_i;
+
     data_req_o = '0;
     data_gnt_o = '0;
     data_rvalid_o = '0;
@@ -82,29 +112,77 @@ module ibex_rfcache import ibex_pkg::*; #(
     data_err_o = '0;
     rf_raddr_c = data_addr_i[6:2];
 
-    if (has_req_d) begin
-      data_gnt_o = 1'b1;
-    end
+    unique case (state_q)
+      normal: begin
+        if (rf_sel_i != active_rf_q) begin
+          state_d = spill_req;
+          reg_count_d = '0;
+        end else begin
+          if (has_req_d) begin
+            data_gnt_o = 1'b1;
+          end
 
-    if (has_req_q) begin
-      if (data_we_i) begin
-        data_err_o = 1'b1;
-      end else begin
-        data_rdata_o = rf_rdata_c;
-        data_err_o = 1'b0;
-        data_rvalid_o = 1'b1;
+          if (has_req_q) begin
+            if (data_we_i) begin
+              data_err_o = 1'b1;
+            end else begin
+              data_rdata_o = rf_rdata_c;
+              data_err_o = 1'b0;
+              data_rvalid_o = 1'b1;
+            end
+          end else begin
+            data_req_o = data_req_i;
+            data_gnt_o = data_gnt_i;
+            data_rvalid_o = data_rvalid_i;
+            data_we_o = data_we_i;
+            data_be_o = data_be_i;
+            data_addr_o = data_addr_i;
+            data_wdata_o = data_wdata_i;
+            data_rdata_o = data_rdata_i;
+            data_err_o = data_err_i;
+          end
+        end
       end
-    end else begin
-      data_req_o = data_req_i;
-      data_gnt_o = data_gnt_i;
-      data_rvalid_o = data_rvalid_i;
-      data_we_o = data_we_i;
-      data_be_o = data_be_i;
-      data_addr_o = data_addr_i;
-      data_wdata_o = data_wdata_i;
-      data_rdata_o = data_rdata_i;
-      data_err_o = data_err_i;
-    end
+      spill_req: begin
+        data_req_o = 1'b1;
+        data_gnt_o = 1'b1;
+        data_we_o = 1'b1;
+        data_addr_o = active_rf_q + (reg_count_q << 2);
+        data_be_o = 4'hF;
+        data_wdata_o = rf_rdata_c;
+        rf_raddr_c = reg_count_q;
+        state_d = spill_wait;
+      end
+      spill_wait: begin
+        if (data_rvalid_i) begin
+          if (reg_count_q == 31) begin
+            reg_count_d = '0;
+            state_d = load_req;
+          end else begin
+            reg_count_d = reg_count_q + 1;
+          end
+        end
+      end
+      load_req: begin
+        data_req_o = 1'b1;
+        data_gnt_o = 1'b1;
+        data_addr_o = active_rf_q + (reg_count_q << 2);
+        data_be_o = 4'hF;
+        state_d = spill_wait;
+      end
+      load_wait: begin
+        if (data_rvalid_i) begin
+          if (reg_count_q == 31) begin
+            state_d = normal;
+            active_rf_d = rf_sel_i;
+          end
+          reg_count_d = reg_count_q + 1;
+          rf_waddr = reg_count_q;
+          rf_wdata = data_rdata_i;
+          rf_we = 1'b1;
+        end
+      end
+    endcase
   end
 
   ibex_register_file #(
@@ -126,8 +204,8 @@ module ibex_rfcache import ibex_pkg::*; #(
     .rdata_b_o(rf_rdata_b_o),
     .raddr_c_i(rf_raddr_c),
     .rdata_c_o(rf_rdata_c),
-    .waddr_a_i(rf_waddr_a_i),
-    .wdata_a_i(rf_wdata_a_i),
-    .we_a_i   (rf_we_a_i)
+    .waddr_a_i(rf_waddr),
+    .wdata_a_i(rf_wdata),
+    .we_a_i   (rf_we)
   );
 endmodule

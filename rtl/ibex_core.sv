@@ -76,6 +76,7 @@ module ibex_core import ibex_pkg::*; #(
   output logic [RegFileDataWidth-1:0]  rf_wdata_wb_ecc_o,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_a_ecc_i,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_b_ecc_i,
+  output logic [31:0]                  csr_mrf_o,
 
   // RAMs interface
   output logic [IC_NUM_WAYS-1:0]       ic_tag_req_o,
@@ -290,7 +291,6 @@ module ibex_core import ibex_pkg::*; #(
   irqs_t       irqs;
   logic        csr_mstatus_mie;
   logic [31:0] csr_mepc, csr_depc;
-  logic [31:0] csr_mrf;
 
   // PMP signals
   logic [33:0]  csr_pmp_addr [PMPNumRegions];
@@ -932,7 +932,7 @@ module ibex_core import ibex_pkg::*; #(
     .csr_mstatus_mie_o(csr_mstatus_mie),
     .csr_mstatus_tw_o (csr_mstatus_tw),
     .csr_mepc_o       (csr_mepc),
-    .csr_mrf_o        (csr_mrf),
+    .csr_mrf_o        (csr_mrf_o),
 
     // PMP
     .csr_pmp_cfg_o    (csr_pmp_cfg),

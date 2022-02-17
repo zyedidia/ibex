@@ -145,6 +145,10 @@ module ibex_top import ibex_pkg::*; #(
   logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
   logic [RegFileDataWidth-1:0] rf_rdata_a_ecc;
   logic [RegFileDataWidth-1:0] rf_rdata_b_ecc;
+
+  logic [31:0] csr_mrf;
+  logic rf_busy;
+
   // Core <-> RAMs signals
   logic [IC_NUM_WAYS-1:0]      ic_tag_req;
   logic                        ic_tag_write;
@@ -257,6 +261,7 @@ module ibex_top import ibex_pkg::*; #(
     .rf_wdata_wb_ecc_o(rf_wdata_wb_ecc),
     .rf_rdata_a_ecc_i (rf_rdata_a_ecc),
     .rf_rdata_b_ecc_i (rf_rdata_b_ecc),
+    .csr_mrf_o        (csr_mrf),
 
     .ic_tag_req_o   (ic_tag_req),
     .ic_tag_write_o (ic_tag_write),
@@ -309,7 +314,7 @@ module ibex_top import ibex_pkg::*; #(
     .rvfi_ext_mcycle,
 `endif
 
-    .fetch_enable_i,
+    .fetch_enable_i (!rf_busy && fetch_enable_i),
     .alert_minor_o(core_alert_minor),
     .alert_major_o(core_alert_major),
     .core_busy_o  (core_busy_d)
@@ -353,7 +358,8 @@ module ibex_top import ibex_pkg::*; #(
     .data_rdata_o      (data_rdata),
     .data_err_o        (data_err),
 
-    .rf_sel_i (),
+    .rf_sel_i  (csr_mrf),
+    .rf_busy_o (rf_busy),
 
     .rf_raddr_a_i(rf_raddr_a),
     .rf_rdata_a_o(rf_rdata_a_ecc),
