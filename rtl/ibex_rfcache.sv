@@ -160,21 +160,24 @@ module ibex_rfcache import ibex_pkg::*; #(
             state_d = load_req;
           end else begin
             reg_count_d = reg_count_q + 1;
+            state_d = spill_req;
           end
         end
       end
       load_req: begin
         data_req_o = 1'b1;
         data_gnt_o = 1'b1;
-        data_addr_o = active_rf_q + (reg_count_q << 2);
+        data_addr_o = rf_sel_i + (reg_count_q << 2);
         data_be_o = 4'hF;
-        state_d = spill_wait;
+        state_d = load_wait;
       end
       load_wait: begin
         if (data_rvalid_i) begin
           if (reg_count_q == 31) begin
             state_d = normal;
             active_rf_d = rf_sel_i;
+          end else begin
+            state_d = load_req;
           end
           reg_count_d = reg_count_q + 1;
           rf_waddr = reg_count_q;

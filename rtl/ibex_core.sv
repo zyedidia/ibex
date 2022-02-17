@@ -437,7 +437,7 @@ module ibex_core import ibex_pkg::*; #(
     .csr_mtvec_init_o(csr_mtvec_init),
 
     // pipeline stalls
-    .id_in_ready_i(id_in_ready),
+    .id_in_ready_i(id_in_ready && fetch_enable_i),
 
     .pc_mismatch_alert_o(pc_mismatch_alert),
     .if_busy_o          (if_busy)
