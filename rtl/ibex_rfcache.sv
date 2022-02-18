@@ -1,5 +1,4 @@
 module ibex_rfcache import ibex_pkg::*; #(
-  parameter logic [31:0]          BootRegFile       = '0,
   parameter int                   NumRegFiles       = 1,
   parameter regfile_e             RegFile           = RegFileFF,
   parameter bit                   RV32E             = 0,
@@ -58,16 +57,19 @@ module ibex_rfcache import ibex_pkg::*; #(
   logic [31:0] active_rf_q, active_rf_d;
 
   logic has_req_q, has_req_d;
+  logic has_rf_q, has_rf_d;
 
   assign has_req_d = data_req_i && data_addr_i[31:4] == active_rf_q;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      active_rf_q <= BootRegFile;
+      active_rf_q <= '0;
       has_req_q <= '0;
+      has_rf_q <= '0;
     end else begin
       active_rf_q <= active_rf_d;
       has_req_q <= has_req_d;
+      has_rf_q <= has_rf_d;
     end
   end
 
@@ -97,6 +99,8 @@ module ibex_rfcache import ibex_pkg::*; #(
     active_rf_d = active_rf_q;
     reg_count_d = reg_count_q;
 
+    has_rf_d = has_rf_q;
+
     rf_waddr = rf_waddr_a_i;
     rf_wdata = rf_wdata_a_i;
     rf_we    = rf_we_a_i;
@@ -115,7 +119,11 @@ module ibex_rfcache import ibex_pkg::*; #(
     unique case (state_q)
       normal: begin
         if (rf_sel_i != active_rf_q) begin
-          state_d = spill_req;
+          if (has_rf_q) begin
+            state_d = spill_req;
+          end else begin
+            state_d = load_req;
+          end
           reg_count_d = '0;
         end else begin
           if (has_req_d) begin
@@ -176,6 +184,7 @@ module ibex_rfcache import ibex_pkg::*; #(
           if (reg_count_q == 31) begin
             state_d = normal;
             active_rf_d = rf_sel_i;
+            has_rf_d = 1'b1;
           end else begin
             state_d = load_req;
           end
