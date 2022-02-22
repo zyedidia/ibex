@@ -213,8 +213,8 @@ module ibex_cs_registers #(
   logic [31:0] dscratch1_q;
   logic        dscratch0_en, dscratch1_en;
 
-  logic [31:0] mrf_q, mrf_d;
-  logic mrf_en;
+  logic [31:0] mrf_q, mrf_d, mtrf_q, mtrf_d, mprf_q, mprf_d;
+  logic mrf_en, mtrf_en, mprf_en;
 
   // CSRs for recoverable NMIs
   // NOTE: these CSRS are nonstandard, see https://github.com/riscv/riscv-isa-manual/issues/261
@@ -348,6 +348,12 @@ module ibex_cs_registers #(
 
       // mrf: active register file address
       CSR_MRF: csr_rdata_int = mrf_q;
+
+      // mtrf: trap register file address
+      CSR_MTRF: csr_rdata_int = mtrf_q;
+
+      // mprf: previous register file address during trap
+      CSR_MPRF: csr_rdata_int = mprf_q;
 
       // mcause: exception cause
       CSR_MCAUSE: csr_rdata_int = {mcause_q[5], 26'b0, mcause_q[4:0]};
@@ -526,6 +532,10 @@ module ibex_cs_registers #(
     mtvec_en     = csr_mtvec_init_i;
     mrf_en       = 1'b0;
     mrf_d        = csr_wdata_int;
+    mtrf_d       = csr_wdata_int;
+    mprf_d       = csr_wdata_int;
+    mtrf_en      = 1'b0;
+    mprf_en      = 1'b0;
     // mtvec.MODE set to vectored by default
     // mtvec.BASE must be 256-byte aligned
     if (csr_mtvec_init_i) begin
@@ -591,6 +601,10 @@ module ibex_cs_registers #(
           mrf_en = 1'b1;
           csr_stall_o = 1'b1;
         end
+
+        CSR_MTRF: mtrf_en = 1'b1;
+
+        CSR_MPRF: mprf_en = 1'b1;
 
         // mtval: trap value
         CSR_MTVAL: mtval_en = 1'b1;
@@ -710,6 +724,12 @@ module ibex_cs_registers #(
           mcause_d       = {csr_mcause_i};
           // save previous status for recoverable NMI
           mstack_en      = 1'b1;
+
+          mprf_en = 1'b1;
+          mrf_en  = 1'b1;
+          mprf_d  = mrf_q;
+          mrf_d   = mtrf_q;
+          csr_stall_o = 1'b1;
         end
       end // csr_save_cause_i
 
@@ -721,6 +741,10 @@ module ibex_cs_registers #(
         priv_lvl_d     = mstatus_q.mpp;
         mstatus_en     = 1'b1;
         mstatus_d.mie  = mstatus_q.mpie; // re-enable interrupts
+
+        mrf_en = 1'b1;
+        mrf_d  = mprf_q;
+        csr_stall_o = 1'b1;
 
         if (nmi_mode_i) begin
           // when returning from an NMI restore state from mstack CSR
@@ -899,6 +923,34 @@ module ibex_cs_registers #(
     .wr_data_i (mrf_d),
     .wr_en_i   (mrf_en),
     .rd_data_o (mrf_q),
+    .rd_error_o()
+  );
+
+  // MTRF
+  ibex_csr #(
+    .Width     (32),
+    .ShadowCopy(1'b0),
+    .ResetValue('0)
+  ) u_mtrf_csr (
+    .clk_i     (clk_i),
+    .rst_ni    (rst_ni),
+    .wr_data_i (mtrf_d),
+    .wr_en_i   (mtrf_en),
+    .rd_data_o (mtrf_q),
+    .rd_error_o()
+  );
+
+  // MPRF
+  ibex_csr #(
+    .Width     (32),
+    .ShadowCopy(1'b0),
+    .ResetValue('0)
+  ) u_mprf_csr (
+    .clk_i     (clk_i),
+    .rst_ni    (rst_ni),
+    .wr_data_i (mprf_d),
+    .wr_en_i   (mprf_en),
+    .rd_data_o (mprf_q),
     .rd_error_o()
   );
 

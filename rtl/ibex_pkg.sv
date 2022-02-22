@@ -409,6 +409,8 @@ package ibex_pkg;
 
     // Machine register file
     CSR_MRF       = 12'h345,
+    CSR_MTRF      = 12'h346,
+    CSR_MPRF      = 12'h347,
 
     // Physical memory protection
     CSR_PMPCFG0   = 12'h3A0,
